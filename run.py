@@ -231,6 +231,10 @@ def main():
         ("Endpoint Detection", lambda: run_endpoint_logic(url, os.path.join(result_dir, "endpoint.txt"))),
         ("Vulnerability Scan", lambda: run_scan_vuln(url, os.path.join(result_dir, "scan_vuln.txt"))),
         ("Parameter & XSS Scan", lambda: run_param_xss_scan(domain, result_dir)),
+        ("Open Redirect Scan", lambda: run_command_and_save(
+            f"python3 orhunter.py -d {domain} -o {os.path.join(result_dir, 'openredirect.txt')}",
+            os.path.join(result_dir, "openredirect.txt")
+        )),
     ]
 
     for step_name, step_func in steps:
@@ -247,4 +251,3 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print(f"\n{YELLOW}[!] Interrupted by user. Exiting...{RESET}")
-
