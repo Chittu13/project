@@ -36,3 +36,43 @@ go install github.com/KathanP19/Gxss@latest
 
 #### 📦 Install Python Libraries:
 ```pip3 install requests beautifulsoup4```
+
+#### Input 
+![img](img/img1.png)
+
+#### Subdomain Enumeration 
+![img](img/img2.png)
+
+#### Scanning for the open ports
+![img](img/img3.png)
+
+#### Running whatweb (website fingerprinting tool used to identify technologies and platforms a website is running on. )
+![img](img/img4.png)
+
+#### Finding All Endpoints
+![img](img/img5.png)
+
+#### Extracting All URLs from Internet 
+![img](img/img6.png)
+
+#### Finding the Vuln Parameter 
+![img](img/img7.png)
+
+#### Saving the result 
+![img](img/img8.png)
+
+#### XSS vuln found
+![img](img/img9.png)
+
+#### Running sqlmap
+![img](img/img10.png)
+
+#### Getting the Database and table names
+![img](img/img11.png)
+
+#### Finding Open Redirect Vulnerability
+![img](img/img12.png)
+
+#### Saving the all output
+![img](img/img13.png)
+
