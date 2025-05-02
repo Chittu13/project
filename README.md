@@ -73,6 +73,11 @@ go install github.com/KathanP19/Gxss@latest
 #### Finding Open Redirect Vulnerability
 ![img](img/img12.png)
 
-#### Saving the all output
+#### 📂 Output
+##### All results are stored in:
 ![img](img/img13.png)
 
+
+### 🧠 Notes
+- The script handles KeyboardInterrupt (Ctrl+C) gracefully by skipping to the next step.
+- All external commands are wrapped with subprocess.run() and errors are handled.
