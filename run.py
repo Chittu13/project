@@ -26,10 +26,10 @@ def typing_text(text, delay=0.03):
         time.sleep(delay)
     print()
 
-def banner(text):
-    print(f"\n{BOLD}{CYAN}{'=' * 60}")
-    print(f"{BOLD}{CYAN}{text.center(60)}")
-    print(f"{BOLD}{CYAN}{'=' * 60}{RESET}")
+def banner(text, color=CYAN):
+    print(f"\n{BOLD}{color}{'=' * 60}")
+    print(f"{BOLD}{color}{text.center(60)}")
+    print(f"{BOLD}{color}{'=' * 60}{RESET}")
 
 def create_directory(path):
     os.makedirs("result", exist_ok=True)
@@ -43,12 +43,11 @@ def extract_domain(url):
     return domain
 
 def run_nmap(domain, output_path):
-    banner("Running Nmap Scan (All Ports + Service Detection)")
+    banner("Scanning Ports + Services running", color=GREEN)
     try:
-        result = subprocess.run(
-            ["nmap", "-sV", "-T4", "--open", domain],
-            capture_output=True, text=True, check=True
-        )
+        result = subprocess.run([
+            "nmap", "-sV", "-T4", "--open", domain
+        ], capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as e:
         result = e
 
@@ -74,6 +73,7 @@ def run_nmap(domain, output_path):
             f.write(line + "\n")
 
 def run_command_and_save(command, output_path):
+    banner(f"Running: {command.split()[0]}", color=CYAN)
     try:
         result = subprocess.run(command, shell=True, capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as e:
@@ -118,7 +118,7 @@ def extract_js_files(html, base_url):
     return sorted(js_files)
 
 def run_endpoint_logic(url, output_path):
-    banner("Extracting Endpoints & JS Files")
+    banner("Extracting Endpoints & JS Files", color=CYAN)
     html = get_html(url)
     if not html:
         print(f"{YELLOW}[!] Failed to fetch website content.{RESET}")
@@ -141,7 +141,7 @@ def run_endpoint_logic(url, output_path):
             f.write(js + "\n")
 
 def run_subdomain_enumeration(domain, result_dir):
-    banner("Running Subdomain Enumeration")
+    banner("Running Subdomain Enumeration", color=GREEN)
     subfinder_cmd = f"subfinder -d {domain} -all -silent"
     assetfinder_cmd = f"assetfinder --subs-only {domain}"
 
@@ -182,13 +182,13 @@ def run_subdomain_enumeration(domain, result_dir):
     print(f"{GREEN}[+] Subdomain scan saved to {sub_file}{RESET}")
 
 def run_scan_vuln(url, output_path):
-    banner("Running Vulnerability Scan")
+    banner("Extracting all URLs", color=GREEN)
     run_command_and_save(f"python3 scan_vuln.py pull --host {url}", output_path)
 
-def run_param_xss_scan(domain, result_dir):
-    banner("Running Parameter and XSS Scans")
-    param_output = f"ParamSpider/output/{domain}.txt"
-    os.makedirs("ParamSpider/output", exist_ok=True)
+def run_param_xss_sql_scan(domain, result_dir):
+    banner("Finding the FUZZ Parameter", color=CYAN)
+    param_output = f"output/{domain}.txt"
+    os.makedirs("output", exist_ok=True)
 
     try:
         subprocess.run(f"python3 ParamSpider/paramspider.py --domain {domain} --exclude png,svg,jpg", shell=True, check=True)
@@ -196,16 +196,23 @@ def run_param_xss_scan(domain, result_dir):
         print(f"{YELLOW}[!] Skipping ParamSpider{RESET}")
 
     try:
-        gxss_cmd = f"cat {param_output} | Gxss -p test123 -o xss.txt"
-        subprocess.run(gxss_cmd, shell=True, check=True)
+        subprocess.run(f"cat {param_output} | Gxss -p test123 -o xss.txt", shell=True, check=True)
     except KeyboardInterrupt:
         print(f"{YELLOW}[!] Skipping Gxss{RESET}")
 
     try:
-        dalfox_cmd = "cat xss.txt | dalfox pipe --skip-bav"
-        run_command_and_save(dalfox_cmd, os.path.join(result_dir, "xss.txt"))
+        run_command_and_save("cat xss.txt | dalfox pipe --skip-bav", os.path.join(result_dir, "xss.txt"))
     except KeyboardInterrupt:
         print(f"{YELLOW}[!] Skipping Dalfox{RESET}")
+
+    try:
+        with open("xss.txt") as f:
+            for line in f:
+                if "?id=" in line:
+                    run_command_and_save(f"sqlmap -u \"{line.strip()}\" --batch --tables", os.path.join(result_dir, "sqlmap.txt"))
+                    break
+    except FileNotFoundError:
+        print(f"{RED}[!] xss.txt not found for SQLMap scan.{RESET}")
 
 def main():
     clear_screen()
@@ -230,9 +237,9 @@ def main():
         ("WhatWeb", lambda: run_command_and_save(f"whatweb {url}", os.path.join(result_dir, "whatweb.txt"))),
         ("Endpoint Detection", lambda: run_endpoint_logic(url, os.path.join(result_dir, "endpoint.txt"))),
         ("Vulnerability Scan", lambda: run_scan_vuln(url, os.path.join(result_dir, "scan_vuln.txt"))),
-        ("Parameter & XSS Scan", lambda: run_param_xss_scan(domain, result_dir)),
+        ("Parameter & XSS & SQL Scan", lambda: run_param_xss_sql_scan(domain, result_dir)),
         ("Open Redirect Scan", lambda: run_command_and_save(
-            f"python3 orhunter.py -d {domain} -o {os.path.join(result_dir, 'openredirect.txt')}",
+            f"python3 orhunter.py -d {domain} -o {os.path.join(result_dir, 'openredirect.txt')} 2>&1 | grep -v \"\\[>>\\] \\[Total URLs Scanned\"",
             os.path.join(result_dir, "openredirect.txt")
         )),
     ]
